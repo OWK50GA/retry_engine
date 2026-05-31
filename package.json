@@ -1,0 +1,28 @@
+{
+  "name": "retry_engine",
+  "version": "1.0.0",
+  "description": "Retry engine and stuff",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "dev": "tsx watch --watch src src/index.ts",
+    "start": "node dist/index.js",
+    "format": "prettier --write ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.24.0",
+  "dependencies": {
+    "express": "^5.2.1",
+    "prettier": "^3.8.2"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^4.7.0",
+    "tsx": "^4.7.0",
+    "typescript": "^6.0.2"
+  }
+}
