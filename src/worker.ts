@@ -155,7 +155,7 @@ async function makeRequest(request: JobRequest) {
 
     if (newAttemptCount >= request.max_retries) {
       console.log(
-        `[worker] ✗ ${request.id} failed permanently (network error) — max retries reached`,
+        `[worker] ✗ ${request.id} failed permanently (network error) - max retries reached`,
       );
       return updateRequest.run({
         id: request.id,
@@ -168,7 +168,7 @@ async function makeRequest(request: JobRequest) {
       });
     } else {
       console.log(
-        `[worker] ↻ ${request.id} retrying (network error) — next attempt in ~${Math.round((postponeNextRetryAt - Date.now()) / 1000)}s`,
+        `[worker] ↻ ${request.id} retrying (network error) - next attempt in ~${Math.round((postponeNextRetryAt - Date.now()) / 1000)}s`,
       );
       updateRequest.run({
         id: request.id,
