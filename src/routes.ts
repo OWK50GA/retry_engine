@@ -45,10 +45,18 @@ router.post("/request", (req: Request, res: Response) => {
     });
   }
 
-  if (typeof url !== "string" || !url.startsWith("http")) {
+//   This isn't valid enough; use http:// or https://
+  if (typeof url !== "string") {
     return res.status(400).json({
       status: "error",
-      message: "Invalid request URL",
+      message: "Invalid request URL.",
+    });
+  }
+
+  if (!url.startsWith("https://") && !url.startsWith("http://")) {
+    return res.status(400).json({
+      status: "error",
+      message: "Invalid request URL. Must be valid http/https",
     });
   }
 
@@ -86,15 +94,19 @@ router.post("/request", (req: Request, res: Response) => {
 
   const id = v7();
 
+  const resolvedMaxRetries = maxRetries ?? 5;
+  const resolvedBackoffMs = backoffMs ?? 1000;
+
   try {
     const result = insertRequest.run({
       id,
       url,
       method,
       body: body ? JSON.stringify(body) : null,
-      maxRetries,
-      backoffMs,
+      maxRetries: resolvedMaxRetries,
+      backoffMs: resolvedBackoffMs,
     });
+    console.log(result);
 
     return res.status(201).json({
       status: "success",
@@ -104,6 +116,7 @@ router.post("/request", (req: Request, res: Response) => {
       },
     });
   } catch (err) {
+    console.error(err);
     return res.status(500).json({
       status: "error",
       message: "Failed to save request",
