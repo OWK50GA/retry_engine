@@ -1,9 +1,4 @@
-export enum RequestStatus {
-  PENDING = "pending",
-  RETRYING = "retrying",
-  COMPLETED = "completed",
-  FAILED = "failed",
-}
+export type RequestStatus = "pending" | "retrying" | "completed" | "failed";
 
 export type HttpMethod =
   | "GET"
