@@ -34,10 +34,12 @@ const insertAttempt = db.prepare(`
 
 
 async function runWorker() {
-    console.log("Worker woke up")
     const due: JobRequest[] = getDueRequests.all(Date.now()) as JobRequest[];
-    
-    await Promise.all(due.map(makeRequest));
+
+    if (due.length > 0) {
+        console.log(`[worker] woke up - ${due.length} due request(s)`);
+        await Promise.all(due.map(makeRequest));
+    }
 }
 
 async function makeRequest(request: JobRequest) {
@@ -47,9 +49,9 @@ async function makeRequest(request: JobRequest) {
         id: request.id,
         nextRetryAt: claimNextRetryAt,
         now: Date.now(),
-    })
+    });
 
-    // How do I measure the duration of the request running?
+    console.log(`[worker] attempting request ${request.id} (attempt #${request.attempt_count + 1} of ${request.max_retries}) → ${request.method} ${request.url}`);
 
     const start = Date.now();
     try {
@@ -63,6 +65,7 @@ async function makeRequest(request: JobRequest) {
 
         if (res.ok) {
             const data = await res.json();
+            console.log(`[worker] ✓ ${request.id} completed (${res.status}) in ${durationMs}ms`);
             updateRequest.run({
                 id: request.id,
                 status: RequestStatusEnum.COMPLETED,
@@ -95,6 +98,7 @@ async function makeRequest(request: JobRequest) {
             })
 
             if (newAttemptCount >= request.max_retries || !shouldRetry(res.status)) {
+                console.log(`[worker] ✗ ${request.id} failed permanently (${res.status}) — ${!shouldRetry(res.status) ? "non-retryable status" : "max retries reached"}`);
                 return updateRequest.run({
                     id: request.id,
                     status: RequestStatusEnum.FAILED,
@@ -106,6 +110,7 @@ async function makeRequest(request: JobRequest) {
                 })
             }
             
+            console.log(`[worker] ↻ ${request.id} retrying (${res.status}) — next attempt in ~${Math.round((postponeNextRetryAt - Date.now()) / 1000)}s`);
             return updateRequest.run({
                 id: request.id,
                 status: RequestStatusEnum.RETRYING,
@@ -133,6 +138,7 @@ async function makeRequest(request: JobRequest) {
         })
 
         if (newAttemptCount >= request.max_retries) {
+            console.log(`[worker] ✗ ${request.id} failed permanently (network error) — max retries reached`);
             return updateRequest.run({
                 id: request.id,
                 status: RequestStatusEnum.FAILED,
@@ -143,6 +149,7 @@ async function makeRequest(request: JobRequest) {
                 now: Date.now(),
             })
         } else {
+            console.log(`[worker] ↻ ${request.id} retrying (network error) — next attempt in ~${Math.round((postponeNextRetryAt - Date.now()) / 1000)}s`);
             updateRequest.run({
                 id: request.id,
                 status: RequestStatusEnum.RETRYING,

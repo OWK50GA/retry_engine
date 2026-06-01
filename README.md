@@ -105,6 +105,9 @@ flowchart TD
     API -->|reads from| DB
 ```
 
+### Architectural Decisions and Design Justification:
+
+
 ## CORE CONCEPTS
 
 In the ecosystem of network flows, request-respond relationships between servers and clients, the requests sometimes fail, and the responses in a well-built system give reasons as to why the request fails, and universally-agreed status codes help engineers with understanding failure reasons.
@@ -126,7 +129,72 @@ As seen, afer the backoff period, the requests come pounding at the recovering s
 Instead of each of the requests being tried at the same time when time, a random variable is thrown in to vary the times in which they try, while keeping the average period the same. For instance, if the clients are to retry the request in 10 seconds, jitter makes it that the retry times for the clients would vary between 9.5 seconds and 10.5 seconds instead, so that the server can handle these requests better.
 There are several jitter strategies - Full Jitter, Equal Jitter, Decorrelated Jitter, etc.
 
+## TEST BREAKDOWN
+
+The test script (`test-script.ts`) spins up a mock HTTP server on port `3002` and runs three scenarios independently via a CLI argument:
+
+```bash
+npx tsx test-script.ts flaky        # scenario 1
+npx tsx test-script.ts 404          # scenario 2
+npx tsx test-script.ts deadletter   # scenario 3
+```
+
+---
+
+### Scenario 1: `flaky` - fails 3 times, then succeeds
+
+The mock `/flaky` endpoint tracks how many times it has been hit. It returns `500` for the first 3 hits, then `200` on the 4th.
+
+This is the core scenario. It proves that:
+- The worker retries on 5xx responses
+- The backoff doubles between each attempt
+- Jitter is applied (the waits are not perfectly round numbers)
+- The request eventually reaches `completed` status
+- All 4 attempts are recorded in the attempt history
+
+This is also the scenario used for the demo video and the README screenshots.
+
+---
+
+### Scenario 2: `404` - terminal error, never retried
+
+The mock `/always-404` endpoint always returns `404`.
+
+This proves the non-retryable path. A 4xx response means the problem is on the client side — wrong URL, resource doesn't exist, not authorised. Retrying it will never help. The worker should mark it `failed` immediately after the first attempt and never touch it again.
+
+Expected: exactly 1 attempt, final status `failed`.
+
+This is an important correctness check. Without it, a misconfigured request could hammer an external service indefinitely.
+
+---
+
+### Scenario 3: `deadletter` - always 500, hits maxRetries
+
+The mock `/always-500` endpoint always returns `500`. The request is submitted with `maxRetries: 3`.
+
+This proves the dead-letter path. Even for retryable errors, there has to be a ceiling — you cannot retry forever. Once `attempt_count >= maxRetries`, the worker marks the request `failed` and stops. It will never be picked up again.
+
+Expected: exactly 3 attempts, final status `failed`.
+
+This is what separates a retry engine from an infinite loop. The dead-letter guarantee is what makes the system safe to run in production.
+
+
 ## SCREENSHOTS
+
+Here are two screenshots of a request that failed 3 times and eventually passed on the fourth trial, born from my `test-script.ts`:
+
+![Top Half](./top_half.png)
+
+![Bottom Half](./bottom_half.png)
+
+### VIDEO
+
+Here is a [video](https://youtu.be/4t29lHkskWg) of the test script running, with the flaky case:
+
+From the video, the first attempt waited 2.71 seconds, the second waited 5.02 seconds, and the third waited 7.52 seconds
+
+Here is the math that backs these numbers:
+
 
 ## ISSUES STRUGGLED WITH
 
