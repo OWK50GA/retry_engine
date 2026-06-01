@@ -1,4 +1,4 @@
-import db from './db';
+import db from "./db";
 
 const getDueRequests = db.prepare(`
     SELECT * FROM requests

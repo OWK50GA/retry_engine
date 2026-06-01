@@ -1,12 +1,12 @@
 import Database from "better-sqlite3";
-import path from 'path';
+import path from "path";
 
-const DB_PATH = path.join(__dirname, '..', 'data.db');
+const DB_PATH = path.join(__dirname, "..", "data.db");
 
 const db = new Database(DB_PATH);
 
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+db.pragma("journal_mode = WAL");
+db.pragma("foreign_keys = ON");
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS requests (
@@ -44,6 +44,7 @@ db.exec(`
 
 export default db;
 
-console.log('Tables: ', db.prepare(
-    `SELECT name FROM sqlite_master WHERE type='table'`
-).all());
+console.log(
+  "Tables: ",
+  db.prepare(`SELECT name FROM sqlite_master WHERE type='table'`).all(),
+);
