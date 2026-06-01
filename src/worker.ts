@@ -1,5 +1,5 @@
 import db from "./db";
-import { JobRequest, RequestStatus, RequestStatusEnum } from "./types";
+import { JobRequest, RequestStatusEnum } from "./types";
 
 const getDueRequests = db.prepare(`
     SELECT * FROM requests
