@@ -16,10 +16,13 @@
   "license": "ISC",
   "packageManager": "pnpm@10.24.0",
   "dependencies": {
+    "better-sqlite3": "^12.10.0",
     "express": "^5.2.1",
-    "prettier": "^3.8.2"
+    "prettier": "^3.8.2",
+    "uuid": "^14.0.0"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
     "@types/express": "^5.0.6",
     "@types/node": "^4.7.0",
     "tsx": "^4.7.0",
