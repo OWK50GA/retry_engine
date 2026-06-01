@@ -41,7 +41,9 @@ const mockServer = http.createServer((req, res) => {
     } else {
       console.log(`  [mock /flaky] hit #${count} → 200 ✓ (success)`);
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ message: "Finally succeeded!", attempt: count }));
+      res.end(
+        JSON.stringify({ message: "Finally succeeded!", attempt: count }),
+      );
     }
     return;
   }
@@ -97,7 +99,9 @@ async function pollUntilDone(id: string, timeoutMs = 120000) {
 
     if (status !== lastStatus) {
       const elapsed = ((Date.now() - start) / 1000).toFixed(1);
-      console.log(`  [poll] status: ${status.toUpperCase()} (${elapsed}s elapsed)`);
+      console.log(
+        `  [poll] status: ${status.toUpperCase()} (${elapsed}s elapsed)`,
+      );
       lastStatus = status;
     }
 
@@ -128,7 +132,7 @@ function printAttempts(attempts: any[]) {
         : "first attempt";
     const statusLabel = a.status_code ?? "network error";
     console.log(
-      `  #${a.attempt_number}  status=${statusLabel}  duration=${a.duration_ms}ms  ${waitLabel}`
+      `  #${a.attempt_number}  status=${statusLabel}  duration=${a.duration_ms}ms  ${waitLabel}`,
     );
     prevTime = a.attempted_at;
   }
@@ -184,7 +188,9 @@ async function scenario404() {
   printAttempts(result.attempts);
 
   const verdict = result.attempts.length === 1 ? "✓ PASS" : "✗ FAIL";
-  console.log(`\n  ${verdict} — expected 1 attempt, got ${result.attempts.length}`);
+  console.log(
+    `\n  ${verdict} — expected 1 attempt, got ${result.attempts.length}`,
+  );
 }
 
 async function scenarioDeadletter() {
@@ -209,7 +215,9 @@ async function scenarioDeadletter() {
   printAttempts(result.attempts);
 
   const verdict = result.attempts.length === 3 ? "✓ PASS" : "✗ FAIL";
-  console.log(`\n  ${verdict} — expected 3 attempts, got ${result.attempts.length}`);
+  console.log(
+    `\n  ${verdict} — expected 3 attempts, got ${result.attempts.length}`,
+  );
 }
 
 // --- Main ---

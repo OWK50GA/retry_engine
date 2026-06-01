@@ -45,7 +45,7 @@ router.post("/request", (req: Request, res: Response) => {
     });
   }
 
-//   This isn't valid enough; use http:// or https://
+  //   This isn't valid enough; use http:// or https://
   if (typeof url !== "string") {
     return res.status(400).json({
       status: "error",

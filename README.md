@@ -21,6 +21,7 @@ pnpm dev
 The server starts on port `3001`.
 
 > **Note:** `better-sqlite3` requires a native binary. If you get a bindings error on first run, rebuild it:
+>
 > ```bash
 > npx node-gyp rebuild --directory node_modules/.pnpm/better-sqlite3@12.10.0/node_modules/better-sqlite3
 > ```
@@ -30,6 +31,7 @@ The server starts on port `3001`.
 ### Endpoints
 
 #### POST /request
+
 Queue a new HTTP request for the retry engine to execute.
 
 ```bash
@@ -47,6 +49,7 @@ curl -X POST http://localhost:3001/request \
 `body`, `maxRetries`, and `backoffMs` are optional. Defaults: `maxRetries=5`, `backoffMs=1000`.
 
 Response:
+
 ```json
 { "status": "success", "data": { "id": "<uuid>", "status": "pending" } }
 ```
@@ -54,6 +57,7 @@ Response:
 ---
 
 #### GET /requests/:id
+
 Get a request and its full attempt history.
 
 ```bash
@@ -63,6 +67,7 @@ curl http://localhost:3001/requests/<id>
 ---
 
 #### GET /requests?status=
+
 List requests filtered by status. Valid statuses: `pending`, `retrying`, `completed`, `failed`.
 
 ```bash
@@ -107,7 +112,6 @@ flowchart TD
 
 ### Architectural Decisions and Design Justification:
 
-
 ## CORE CONCEPTS
 
 In the ecosystem of network flows, request-respond relationships between servers and clients, the requests sometimes fail, and the responses in a well-built system give reasons as to why the request fails, and universally-agreed status codes help engineers with understanding failure reasons.
@@ -121,9 +125,10 @@ The real world consequence is that the service recovers briefly, and then due to
 
 That is where **Exponential Backoff** would come in.
 Exponential backoff solves this issue by spacing out retry attempts, waiting increasingly before each retry, instead of retrying immediately.
-It basically gives the system breathing space after the spike, or whatever went wrong to get right in the system, before the requests come rushing at it again. 
+It basically gives the system breathing space after the spike, or whatever went wrong to get right in the system, before the requests come rushing at it again.
 
 ### WHY JITTER MATTERS
+
 As seen, afer the backoff period, the requests come pounding at the recovering service again, and what exactly is stopping the same crash from repeating? The case results in another **THUNDERING HERD**.
 
 Instead of each of the requests being tried at the same time when time, a random variable is thrown in to vary the times in which they try, while keeping the average period the same. For instance, if the clients are to retry the request in 10 seconds, jitter makes it that the retry times for the clients would vary between 9.5 seconds and 10.5 seconds instead, so that the server can handle these requests better.
@@ -146,6 +151,7 @@ npx tsx test-script.ts deadletter   # scenario 3
 The mock `/flaky` endpoint tracks how many times it has been hit. It returns `500` for the first 3 hits, then `200` on the 4th.
 
 This is the core scenario. It proves that:
+
 - The worker retries on 5xx responses
 - The backoff doubles between each attempt
 - Jitter is applied (the waits are not perfectly round numbers)
@@ -178,7 +184,6 @@ Expected: exactly 3 attempts, final status `failed`.
 
 This is what separates a retry engine from an infinite loop. The dead-letter guarantee is what makes the system safe to run in production.
 
-
 ## SCREENSHOTS
 
 Here are two screenshots of a request that failed 3 times and eventually passed on the fourth trial, born from my `test-script.ts`:
@@ -195,7 +200,6 @@ From the video, the first attempt waited 2.71 seconds, the second waited 5.02 se
 
 Here is the math that backs these numbers:
 
-
 ## ISSUES STRUGGLED WITH
 
 Some issues were struggled with, such as:
@@ -207,11 +211,11 @@ Some issues were struggled with, such as:
 
 There were things I was also confused about, but I guess you will see what I did in the code:
 
-- Retryable requests: The requests can be summed up easily as 5xx -> Retryable, and 4xx -> not retryable, but I had two specific response types that are 4xx, but I think might be retryable. 
-A request that responds with a status code of 429 represents rate limiting, rather than the client explicit forbidden fault, or unauthorization. This means that retrying the request will likely succeed as well, which is kind of the point of this worker. 
-Another one like that is those with  response status of 408 -> that literally is a request timeout.
-In my opinion, it is retryable, so I added it to my retryable request i.e. shouldRetry(408) returns true.
-However, I did not add 429 because I had a certain experience. When working with langchain to integrate AI last week, I noticed that when my api key for the gemini model had exhausted its allowed tokens, I got a 429 response. This means there are two completely separate cases of 429: 
+- Retryable requests: The requests can be summed up easily as 5xx -> Retryable, and 4xx -> not retryable, but I had two specific response types that are 4xx, but I think might be retryable.
+  A request that responds with a status code of 429 represents rate limiting, rather than the client explicit forbidden fault, or unauthorization. This means that retrying the request will likely succeed as well, which is kind of the point of this worker.
+  Another one like that is those with response status of 408 -> that literally is a request timeout.
+  In my opinion, it is retryable, so I added it to my retryable request i.e. shouldRetry(408) returns true.
+  However, I did not add 429 because I had a certain experience. When working with langchain to integrate AI last week, I noticed that when my api key for the gemini model had exhausted its allowed tokens, I got a 429 response. This means there are two completely separate cases of 429:
 - - One of them is the genuine rate limiting, where you are trying to reduce load on the server by allowing only a number of requests per second.
 - - The other is when the user is authenticated, has the correct role, but is not able to access the resource, due to an issue like the tokens exhausting.
 
