@@ -206,7 +206,7 @@ Here are two screenshots of a request that failed 3 times and eventually passed 
 
 Here is a [video](https://youtu.be/4t29lHkskWg) of the test script running, with the flaky case:
 
-From the video, the first attempt waited 2.71 seconds, the second waited 5.02 seconds, and the third waited 7.52 seconds
+From the video, the first attempt waited 2.67 seconds, the second waited 4.02 seconds, and the third waited 7.02 seconds
 
 Here is the math that backs these numbers:
 
