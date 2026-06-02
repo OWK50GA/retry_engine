@@ -193,7 +193,7 @@ const calculateNextRetry = (
 };
 
 const shouldRetry = (status: number): boolean => {
-  return status >= 500 || status === 429 || status === 408;
+  return status >= 500 || status === 408;
 };
 
 export function startWorker() {
